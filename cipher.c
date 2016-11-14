@@ -9,15 +9,31 @@
 #include <assert.h>
 #include <errno.h> 
 #include <string.h>
+#define MAX 1024
+
+/* TO DO LIST - 
+** 1. exit while closing all files/directories.
+** 2. take care of all result values.
+** 3. free memory allocation. 
+**/ 
 
 int main(int argc, char** argv)
 {
 	/* init variables */
-	struct dirent *dp;
-	DIR *dirPointer;
-	DIR *outputPointer;
-	char *dirPath;
-	char *outputPath;
+	struct dirent *dpINPUT; /*struct directory
+	DIR *dirPointer; /* pointer to input directory */
+	DIR *outputPointer; /* pointer to output directory */
+	char *dirPath; /* path of input directory */
+	//char *outputPathFile; /*path to the input file after encrypy/decrypt */
+	char *outputDirectoryPath; /* path of output directory (if not exists - create one) */
+	int bufferSizeInput; /* number of bits to read from input file */
+	int bufferSizeKey; /* number of bits to read from key file */
+	char filename_input[MAX];
+	char outputPathFile[MAX];
+	int fd = -1; /* input file - after open */
+	int fd_output = -1; /* output file - after open */
+	struct stat keyFileStat; /*create stat to determine size */
+
 
 	/* check invalid number of arguments */
    	if (argc != 4){
@@ -29,7 +45,7 @@ int main(int argc, char** argv)
 	dirPath = argv[1] ;
  	if ((dirPointer = opendir(dirPath)) == NULL) {
 		printf("Error opening input directory: %s\n", strerror(errno));
-		return errno; // ERROR!
+		return errno; 
 	}
 
 	/* check if encryption file exists */
@@ -37,21 +53,77 @@ int main(int argc, char** argv)
 
    	if( encKeyFile < 0 ){
         	printf( "Error opening  encrypton key file : %s\n", strerror(errno) );
-        	return errno; /* what is it? */
+        	return errno; 
    	}   
 
+	if ( fstat(encKeyFile, &keyFileStat)<0 ){ /*check for error + check size of key file */
+		printf("Error while using fstat: %s\n", strerror(errno));
+		return errno; 
+		}
+
 	/* check if the output directory exists */
-	outputPath = argv[3] ;
- 	if ((outputPointer = opendir(outputPath)) == NULL) {
+	outputDirectoryPath = argv[3] ;
+ 	if ((outputPointer = opendir(outputDirectoryPath)) == NULL) {
 		printf("Creating new directory\n"); /*TO DELETE*/
-		int newOutputDir = mkdir(outputPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		int newOutputDir = mkdir(outputDirectoryPath, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 		/* check if success in mkdir */
 		if (newOutputDir<0){
 			printf( "Error opening  creating output directory : %s\n", strerror(errno) );
-        		return errno; /* what is it? */
+        		return errno; 
 		}
 	}
 
+	// MAIN LOOP //
+	// ========= //
+	// go to input directory 
+	// for each file in directory
+		// create output file
+		// xor with key file (check the buffer size and adjust) + 
+		// move key to start
+		// close file from input + output
+	// close key file + input dir + output dir
+
+	 while ((dpINPUT = readdir(dirPointer)) != NULL){ /* iterate on every file in imput directory */
+
+        	sprintf(filename_input, "%s/%s", dirPath,dpINPUT->d_name); /* full path to file in input */
+	        sprintf(outputPathFile, "%s/%s", outputDirectoryPath,dpINPUT->d_name); /* full path to file in output */
+        	struct stat inputFileStat; /*create sts to determine size */
+
+ 		fd=open(filename_input,O_RDONLY); /*open input file to read only */
+		if (fd == -1){ /*check for error */
+			printf("Error opening file: %s\n", strerror(errno));
+			return errno; 
+		}
+
+		if (fd_output == -1){
+			printf("Error opening file: %s\n", strerror(errno));
+			return errno; 
+	
+		}
+
+		if ( fstat(fd, &inputFileStat)<0 ){ /*check for error */
+			printf("Error while using fstat: %s\n", strerror(errno));
+			return errno; 
+		}
+
+		if (inputFileStat.st_size > keyFileStat.st_size){
+
+		}
+
+		// Allocate enough to hold the whole contents plus a '\0' char.
+		//char *buff = malloc(fileStat.st_size + 1);
+		//free(buff);
+		close(fd);
+	}
+	close(encKeyFile); // close encKeyFile
+
+/*
+struct stat fileStat;
+fstat(fd, &fileStat); // Don't forget to check for an error return in real code
+// Allocate enough to hold the whole contents plus a '\0' char.
+char *buff = malloc(fileStat.st_size + 1);
+free(buff);
+*/
 /*
     char filename_qfd[100] ;
 
@@ -91,7 +163,7 @@ closedir(dfd);
 	}
 	buf[len] = '\0'; // string closer
 
-   	close(encKeyFile); // close encKeyFile
+   	
 */
 	printf("end of main function\n");
 }
