@@ -3,7 +3,7 @@ cd 305560336
 
 mkdir temp
 cd temp
-echo ' Maayan' > Maayan.txt
+echo 'Maayan' > Maayan.txt
 echo 'Sivroni' > Sivroni.txt
 echo 'sivroni' > sivroni.txt
 
