@@ -193,9 +193,9 @@ int main(int argc, char** argv)
 						close(encKeyFile);
 						return errno; 
 				}
-				
-			//} /*end of inside-while loop - EOF*/
-			if (read_input_file < 0){ /* if read_input_file == 0 do EOF */
+			
+		} /* end of while loop */
+		if (read_input_file < 0){ /* if read_input_file == 0 do EOF */
 				printf("Error while reading input file: %s\n", strerror(errno));
 				closedir(dirPointer);
 				closedir(outputPointer);
@@ -203,7 +203,6 @@ int main(int argc, char** argv)
 				close(fd_output);
 				close(encKeyFile);
 				return errno; 
-			}
 		}
 
 		close(encKeyFile); // close encKeyFile
