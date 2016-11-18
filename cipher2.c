@@ -18,6 +18,7 @@
 ** 2. take care of all result values.
 ** 3. free memory allocation. 
 ** 4. read starred web in chrome.
+** 5. delete comments // and unnecessary printf
 **/ 
 
 int main(int argc, char** argv)
@@ -91,24 +92,38 @@ int main(int argc, char** argv)
 		// move key to start
 		// close file from input + output + key
 	// close input dir + output dir
-
+	printf( "Entering main loop\n");
 	 while ((dpINPUT = readdir(dirPointer)) != NULL){ /* iterate on every file in input directory */
-
+		
         	sprintf(filename_input, "%s/%s", dirPath,dpINPUT->d_name); /* full path to file in input */
 	        sprintf(outputPathFile, "%s/%s", outputDirectoryPath,dpINPUT->d_name); /* full path to file in output */
-        	struct stat inputFileStat; /*create stat to determine size */
+        	
+		struct stat inputFileStat; /*create stat to determine size */
+		printf( "Iterating source file %s\n", filename_input);
+		if ( stat(filename_input, &inputFileStat)<0 ){ /*check for error */
+			printf("Error while using fstat: %s\n", strerror(errno));
+			closedir(dirPointer);
+			closedir(outputPointer);
+			return errno; 
+		}
+		 
+        	if (S_ISDIR(inputFileStat.st_mode)) { /* skip directories */
+			printf("entered isdir\n");
+			continue;
+		}
+
 
  		fd=open(filename_input,O_RDONLY); /*open input file to read only */
 		if (fd == -1){ /*check for error */
-			printf("Error opening file: %s\n", strerror(errno));
+			printf("Error opening input file: %s\n", strerror(errno));
 			closedir(dirPointer);
 			closedir(outputPointer);
 			return errno; 
 		}
 		
-		fd_output = open(outputPathFile, O_RDWR | O_CREAT | O_TRUNC); /* opens/creates an output file */
+		fd_output = open(outputPathFile, O_RDWR | O_CREAT | O_TRUNC,0777 ); /* opens/creates an output file */
 		if (fd_output == -1){ /*check for error */
-			printf("Error opening file: %s\n", strerror(errno));
+			printf("Error opening output file: %s\n", strerror(errno));
 			closedir(dirPointer);
 			closedir(outputPointer);
 			close(fd);
@@ -116,14 +131,6 @@ int main(int argc, char** argv)
 	
 		}
 
-		if ( stat(filename_input, &inputFileStat)<0 ){ /*check for error */
-			printf("Error while using fstat: %s\n", strerror(errno));
-			closedir(dirPointer);
-			closedir(outputPointer);
-			close(fd);
-			close(fd_output);
-			return errno; 
-		}
 		
 		
    		encKeyFile = open(argv[2], O_RDWR); /* opens key file from the beggining */
@@ -145,8 +152,11 @@ int main(int argc, char** argv)
 			close(fd_output);
 			return errno; 
 		}
-			
+
+		
 		while ((read_input_file = read(fd,buffer, 1))>0){ /*read until EOF */
+				
+
 				read_key_file = read(encKeyFile,buffer_key, read_input_file );
 				if (read_key_file < 0){
 						printf("Error while readng from key file: %s\n", strerror(errno));
@@ -162,7 +172,7 @@ int main(int argc, char** argv)
 					encKeyFile = open(argv[2], O_RDWR); /* opens key file from the beggining */
 	
    					if( encKeyFile < 0 ){
-        					printf( "Error opening  encrypton key file : %s\n", strerror(errno) );
+        					printf( "Error opening encrypton key file : %s\n", strerror(errno) );
 						closedir(dirPointer);
 						closedir(outputPointer);
 						close(fd);
@@ -185,7 +195,7 @@ int main(int argc, char** argv)
 				buffer_output[0] = (char) (buffer[0] ^ buffer_key[0]); /* XOR */
 				write_to_file = write(fd_output, buffer_output, 1);
 				if (write_to_file <0){
-					printf("Error while using writing: %s\n", strerror(errno));
+					printf("Error while using writing to output file: %s\n", strerror(errno));
 						closedir(dirPointer);
 						closedir(outputPointer);
 						close(fd);
