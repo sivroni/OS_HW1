@@ -30,12 +30,8 @@ int main(int argc, char** argv)
 	char *dirPath; /* path of input directory */
 	char *outputDirectoryPath; /* path of output directory (if not exists - create one) */
 	int bufferSizeInput=0; /* used in case we need to repeat on the key file */
-	char filename_input[MAX];
-	char outputPathFile[MAX];
-	
-//	char buffer[BYTE_SIZE]; /* string from input file */
-//	char buffer_key[BYTE_SIZE]; /* string from key file */
-//	char buffer_output[BYTE_SIZE]; /*written to output file byte by byte */
+	char filename_input[MAX]; /* input file path - string */
+	char outputPathFile[MAX]; /* output file path - string */
 	char buffer[BYTE_SIZE]; /* string from input file */
 	char buffer_key[BYTE_SIZE]; /* string from key file */
 	char buffer_output[BYTE_SIZE]; /*written to output file byte by byte */
@@ -45,7 +41,7 @@ int main(int argc, char** argv)
 	int read_input_file; /*num of bytes read from input file */
 	int read_key_file; /*num of bytes read from key file */
 	int write_to_file; /*after write function */
-	
+	int i; /* iterates the buffers */
 	/* check invalid number of arguments */
    	if (argc != 4){
 		printf("Not enough arguments. Exiting... \n" );
@@ -93,6 +89,7 @@ int main(int argc, char** argv)
 		// close file from input + output + key
 	// close input dir + output dir
 	printf( "Entering main loop\n");
+	int count_eof = 0;
 	 while ((dpINPUT = readdir(dirPointer)) != NULL){ /* iterate on every file in input directory */
 		
         	sprintf(filename_input, "%s/%s", dirPath,dpINPUT->d_name); /* full path to file in input */
@@ -114,7 +111,7 @@ int main(int argc, char** argv)
 
 
  		fd=open(filename_input,O_RDONLY); /*open input file to read only */
-		if (fd == -1){ /*check for error */
+		if (fd <0 ){ /*check for error */
 			printf("Error opening input file: %s\n", strerror(errno));
 			closedir(dirPointer);
 			closedir(outputPointer);
@@ -122,7 +119,7 @@ int main(int argc, char** argv)
 		}
 		
 		fd_output = open(outputPathFile, O_RDWR | O_CREAT | O_TRUNC,0777 ); /* opens/creates an output file */
-		if (fd_output == -1){ /*check for error */
+		if (fd_output <0){ /*check for error */
 			printf("Error opening output file: %s\n", strerror(errno));
 			closedir(dirPointer);
 			closedir(outputPointer);
@@ -168,6 +165,7 @@ int main(int argc, char** argv)
 						return errno; 
 				}
 				else { /* file key EOF - we need to open it again */
+					count_eof++;
 					close(encKeyFile);
 					encKeyFile = open(argv[2], O_RDWR); /* opens key file from the beggining */
 	
@@ -191,9 +189,9 @@ int main(int argc, char** argv)
 					return errno; 
 					}
 				}
-		
-				buffer_output[0] = (char) (buffer[0] ^ buffer_key[0]); /* XOR */
-				write_to_file = write(fd_output, buffer_output, 1);
+				for (i=0; i<read_input_file; i++)
+					buffer_output[i] = (char) (buffer[i] ^ buffer_key[i]); /* XOR */
+				write_to_file = write(fd_output, buffer_output, read_input_file);
 				if (write_to_file <0){
 					printf("Error while using writing to output file: %s\n", strerror(errno));
 						closedir(dirPointer);
@@ -214,7 +212,8 @@ int main(int argc, char** argv)
 				close(encKeyFile);
 				return errno; 
 		}
-
+		printf("iterated on key %d times\n", count_eof);
+		count_eof = 0;
 		close(encKeyFile); // close encKeyFile
 		close(fd); // close input file
 		close(fd_output); // close output file
