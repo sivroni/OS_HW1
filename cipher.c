@@ -215,7 +215,7 @@ int main(int argc, char** argv)
 	
 	closedir(dirPointer); /*maybe there is another func for this? */
 	closedir(outputPointer);
-	printf("end of main function\n");
+	//printf("end of main function\n");
 }
 
 
