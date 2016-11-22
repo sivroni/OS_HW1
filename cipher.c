@@ -122,7 +122,7 @@ int main(int argc, char** argv)
 
 		
 		
-   		encKeyFile = open(argv[2], O_RDWR); /* opens key file from the beggining */
+   		encKeyFile = open(argv[2], O_RDONLY); /* opens key file from the beggining */
 	
    		if( encKeyFile < 0 ){
         		printf( "Error opening  encrypton key file : %s\n", strerror(errno) );
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
 					if (read_key_file == 0){ /* file key EOF - we need to open it again */
 						//count_eof++;
 						close(encKeyFile);
-						encKeyFile = open(argv[2], O_RDWR); /* opens key file from the beggining */
+						encKeyFile = open(argv[2], O_RDONLY); /* opens key file from the beggining */
 	
    						if( encKeyFile < 0 ){
         						printf( "Error opening encrypton key file : %s\n", strerror(errno) );
